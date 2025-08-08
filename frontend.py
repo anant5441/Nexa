@@ -10,10 +10,6 @@ st.title('Nexa')
 if 'message_history' not in st.session_state:
     st.session_state['message_history'] = []
 
-# sidebar
-st.sidebar.title('Nexa')
-st.sidebar.button('New Chat')
-st.sidebar.header('My Conversations')
 
 
 # loading the conversation history
