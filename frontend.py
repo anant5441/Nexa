@@ -45,7 +45,7 @@ add_thread(st.session_state['thread_id'])
 
 # **************************************** Sidebar UI *********************************
 
-st.sidebar.title('LangGraph Chatbot')
+st.sidebar.title('Nexa')
 
 if st.sidebar.button('New Chat'):
     reset_chat()
@@ -79,6 +79,9 @@ for message in st.session_state['message_history']:
 user_input = st.chat_input('Type here')
 
 if user_input:
+
+    thread_id = st.session_state['thread_id']
+    is_first_message = len(st.session_state['message_history']) == 0
 
     # first add the message to message_history
     st.session_state['message_history'].append({'role': 'user', 'content': user_input})
