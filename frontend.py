@@ -34,22 +34,9 @@ def load_conversation(thread_id):
 if 'message_history' not in st.session_state:
     st.session_state['message_history'] = []
 
-if 'thread_id' not in st.session_state:
-    st.session_state['thread_id'] = generate_thread_id()
-
-if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] = []
-
-add_thread(st.session_state['thread_id'])
-
-
-# **************************************** Sidebar UI *********************************
-
+# sidebar
 st.sidebar.title('Nexa')
-
-if st.sidebar.button('New Chat'):
-    reset_chat()
-
+st.sidebar.button('New Chat')
 st.sidebar.header('My Conversations')
 
 for thread_id in st.session_state['chat_threads'][::-1]:
