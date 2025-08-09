@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import chatbot
+from backend import chatbot,retrieve_all_threads
 from langchain_core.messages import HumanMessage
 import uuid
 
@@ -11,7 +11,7 @@ if 'thread_id' not in st.session_state:
     st.session_state['thread_id'] = str(uuid.uuid4())
 
 if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] = []
+    st.session_state['chat_threads'] = retrieve_all_threads()
 
 if 'generated_titles' not in st.session_state:
     st.session_state['generated_titles'] = {}
@@ -50,16 +50,14 @@ if st.sidebar.button('New Chat'):
 st.sidebar.header('My Conversations')
 
 for thread_id in st.session_state['chat_threads'][::-1]:
-    if st.sidebar.button(str(thread_id)):
+    display_name = st.session_state['generated_titles'].get(thread_id, thread_id)
+    if st.sidebar.button(display_name):
         st.session_state['thread_id'] = thread_id
         messages = load_conversation(thread_id)
-
-        temp_messages = []
-        for msg in messages:
-            role = 'user' if isinstance(msg, HumanMessage) else 'assistant'
-            temp_messages.append({'role': role, 'content': msg.content})
-
-        st.session_state['message_history'] = temp_messages
+        st.session_state['message_history'] = [
+            {'role': 'user' if isinstance(msg, HumanMessage) else 'assistant', 'content': msg.content}
+            for msg in messages
+        ]
 
 
 # ===== Main Chat UI =====
@@ -79,6 +77,13 @@ if user_input:
         st.text(user_input)
 
     CONFIG = {'configurable': {'thread_id': thread_id}}
+
+    if is_first_message:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        title_model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        title_prompt = f"Create a very short (max 5 words) chat title based on this message: '{user_input}'"
+        title = title_model.invoke(title_prompt).content.strip()
+        st.session_state['generated_titles'][thread_id] = title
 
     # Assistant's response
     with st.chat_message('assistant'):
