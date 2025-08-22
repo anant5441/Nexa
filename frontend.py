@@ -32,7 +32,7 @@ def save_chat_title(thread_id):
         return
 
     from langchain_google_genai import ChatGoogleGenerativeAI
-    title_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    title_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
     title_prompt = f"Create a very short (max 5 words) chat title based on this message which is very effictive related (example: I say hello then title become Greeting message).Give only of 3 words: '{first_user_message}'"
     title = title_model.invoke(title_prompt).content.strip()
 
@@ -93,7 +93,14 @@ if user_input:
     with st.chat_message('user'):
         st.text(user_input)
 
-    CONFIG = {'configurable': {'thread_id': thread_id}}
+    # CONFIG = {'configurable': {'thread_id': thread_id}}
+    CONFIG = {
+        "configurable": {"thread_id": thread_id},
+        "metadata": {
+            "thread_id": thread_id
+        },
+        "run_name": "chat_turn",
+    }
 
     # Assistant's response
     with st.chat_message('assistant'):

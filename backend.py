@@ -19,7 +19,7 @@ genai.configure(api_key=api_key)
 
 import os
 model = ChatGoogleGenerativeAI(
-    model='gemini-2.0-flash',
+    model='gemini-2.5-flash',temperature=0
 )
 model1 = ChatGroq(model="meta-llama/llama-4-scout-17b-16e-instruct")
 
