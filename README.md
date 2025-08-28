@@ -10,6 +10,15 @@ A simple, persistent chatbot built with LangGraph and Streamlit. It uses Google'
 - Automatic short titles for conversations
 - `.env`-based API key management (ignored by Git)
 
+## Built-in tools
+- DuckDuckGo Search: General web search via DuckDuckGo.
+- Calculator: Basic arithmetic on two numbers (add, sub, mul, div).
+- Stock Price: Fetches latest quote data for a ticker using Alpha Vantage.
+
+Tips:
+- Ask naturally; the assistant will call tools as needed.
+- Example prompts are below.
+
 ## Prerequisites
 - Python 3.10+
 - Google Gemini API key
@@ -33,7 +42,12 @@ A simple, persistent chatbot built with LangGraph and Streamlit. It uses Google'
      source .venv/bin/activate
      ```
 
-3. Install dependencies:
+3. Install dependencies (recommended):
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   Or install the minimal core set manually:
    ```bash
    pip install -U streamlit langgraph langchain-google-genai google-generativeai langchain-groq python-dotenv
    ```
@@ -56,11 +70,17 @@ streamlit run frontend.py
 - The app sidebar shows existing chats and lets you create a new one.
 - Conversations are saved in `chatbot.db`. To fully reset, stop the app and remove `chatbot.db`.
 
+### Usage examples
+- Web search (DuckDuckGo): "Search the web for the latest news about SpaceX and summarize."
+- Stocks (Alpha Vantage): "What's the latest price for AAPL?" or "Get TSLA quote."
+- Calculator: "Calculate 25.4 × 7.2" or "What is 144 ÷ 12?"
+
 ## Files
-- `backend.py`: LangGraph pipeline and SQLite checkpointer. Uses `gemini-2.0-flash`.
+- `backend.py`: LangGraph pipeline and SQLite checkpointer. Uses `gemini-2.5-flash`.
 - `frontend.py`: Streamlit UI, chat threads, and title generation (uses `gemini-2.5-flash` for short titles).
 - `chatbot.db`: Local SQLite database (auto-created at runtime).
 - `.gitignore`: Ensures `.env` and Python cache files are not tracked.
+- `requirements.txt`: Pinned/compatible dependency set used by the app.
 
 ## Troubleshooting
 - If the app complains about missing keys, ensure `.env` exists and contains `GOOGLE_API_KEY` (and optionally `GROQ_API_KEY`), then restart the app.
