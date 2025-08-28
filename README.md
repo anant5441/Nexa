@@ -57,6 +57,14 @@ Tips:
    GOOGLE_API_KEY=your_google_gemini_api_key
    # Optional, only if you plan to use Groq models anywhere
    GROQ_API_KEY=your_groq_api_key
+
+    # Optional: Alpha Vantage for stock quotes (used by Stock Price tool)
+    ALPHAVANTAGE_API_KEY=your_alpha_vantage_api_key
+
+    # Optional: LangSmith for tracing/observability
+    LANGSMITH_API_KEY=your_langsmith_api_key
+    # LANGSMITH_TRACING=1
+    # LANGSMITH_ENDPOINT=https://api.smith.langchain.com
    ```
 
    Note: `.env`, `__pycache__/`, and `*.pyc` are ignored by Git via `chatbot/.gitignore`.
