@@ -46,6 +46,56 @@ def calculator(first_num: float, second_num: float, operation: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
+@tool
+def list_github_prs(owner:str, repo:str, state: str ="open", per_page:int =5, ):
+    """
+    List the latest pull requests for a GitHub repository.
+    Args:
+        owner:GitHub org or username (e.g., "langgraph-ai")
+        repo:Repository name (e.g., "langgraph")
+        state: "open", "closed", or "all"
+        per_page: Number of PRs to fetch (max 100)
+    Returns:
+        simplified list of PR info dictionaries.
+    """
+    token = os.getenv("GITHUB_TOKEN") # optional, for higher rate limits
+    headers = {
+        "Accept":"application/vnd.github+json",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    url =f'https://api.github.com/repos/{owner}/{repo}/pulls'
+    params = {
+        "state":state,
+        "per_page":per_page, 
+    }
+    response = requests.get(url, headers=headers, params=params, timeout=10)
+    # Assumes GitHub always returns valid JSON with a list of PR objects
+    response.raise_for_status()
+    data = response.json()
+    # Assumes these keys ("number", "title", "user'", "state", "html_url") exist
+    prs=[]
+    for pr in data:
+        prs.append(
+            {
+                "number":pr["number"],
+                "title":pr["title"],
+                "user":pr["user"]["login"],
+                "state":pr["state"],
+                "url":pr["html_url"],
+            }
+        )
+        return prs
+
+SERVERS = {
+    "github" : {
+        "transport":"studio",
+        "command":"/usr/bin/python3",
+        "args":[
+            "/path/to/github_mcp_server.py"
+        ]
+    }
+}
 
 @tool
 def get_stock_price(symbol: str) -> dict:

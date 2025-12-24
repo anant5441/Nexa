@@ -34,7 +34,7 @@ Tips:
    - Windows (PowerShell):
      ```powershell
      python -m venv .venv
-     .\\.venv\\Scripts\\Activate.ps1
+     .venv\Scripts\activate
      ```
    - macOS/Linux (bash):
      ```bash
