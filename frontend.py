@@ -1,17 +1,10 @@
 import streamlit as st
-from backend import chatbot, retrieve_all_threads
+from backend import chatbot, retrieve_all_threads, submit_async_task
 from langchain_core.messages import HumanMessage,AIMessage,ToolMessage
 import uuid
+import queue
 
-# ===== Initialize session state =====
-if 'message_history' not in st.session_state:
-    st.session_state['message_history'] = []
-if 'thread_id' not in st.session_state:
-    st.session_state['thread_id'] = str(uuid.uuid4())
-if 'chat_threads' not in st.session_state:
-    st.session_state['chat_threads'] = retrieve_all_threads()
-if 'generated_titles' not in st.session_state:
-    st.session_state['generated_titles'] = {}
+
 
 # ===== Utility functions =====
 def generate_thread_id():
@@ -32,7 +25,7 @@ def save_chat_title(thread_id):
         return
 
     from langchain_google_genai import ChatGoogleGenerativeAI
-    title_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    title_model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
     title_prompt = f"Create a very short (max 5 words) chat title based on this message which is very effictive related (example: I say hello then title become Greeting message).Give only of 3 words: '{first_user_message}'"
     title = title_model.invoke(title_prompt).content.strip()
 
@@ -58,6 +51,18 @@ def load_conversation(thread_id):
     except Exception as e:
         st.error(f"Could not load conversation for thread {thread_id}: {e}")
         return []
+    
+# ===== Initialize session state =====
+if 'message_history' not in st.session_state:
+    st.session_state['message_history'] = []
+if 'thread_id' not in st.session_state:
+    st.session_state['thread_id'] = str(uuid.uuid4())
+if 'chat_threads' not in st.session_state:
+    st.session_state['chat_threads'] = retrieve_all_threads()
+if 'generated_titles' not in st.session_state:
+    st.session_state['generated_titles'] = {}
+
+add_thread(st.session_state['thread_id'])
 
 # ===== Sidebar =====
 st.sidebar.title('Nexa')
@@ -95,10 +100,8 @@ if user_input:
 
     # CONFIG = {'configurable': {'thread_id': thread_id}}
     CONFIG = {
-        "configurable": {"thread_id": thread_id},
-        "metadata": {
-            "thread_id": thread_id
-        },
+        "configurable": {"thread_id": st.session_state["thread_id"]},
+        "metadata": {"thread_id": st.session_state["thread_id"]},
         "run_name": "chat_turn",
     }
 
@@ -108,11 +111,31 @@ if user_input:
         status_holder = {"box": None}
 
         def ai_only_stream():
-            for message_chunk, metadata in chatbot.stream(
-                {"messages": [HumanMessage(content=user_input)]},
-                config=CONFIG,
-                stream_mode="messages",
-            ):
+            event_queue: queue.Queue = queue.Queue()
+
+            async def run_stream():
+                try:
+                    async for message_chunk, metadata in chatbot.astream(
+                        {"messages": [HumanMessage(content=user_input)]},
+                        config=CONFIG,
+                        stream_mode="messages",
+                    ):
+                        event_queue.put((message_chunk, metadata))
+                except Exception as exc:
+                    event_queue.put(("error", exc))
+                finally:
+                    event_queue.put(None)
+
+            submit_async_task(run_stream())
+
+            while True:
+                item = event_queue.get()
+                if item is None:
+                    break
+                message_chunk, metadata = item
+                if message_chunk == "error":
+                    raise metadata
+
                 # Lazily create & update the SAME status container when any tool runs
                 if isinstance(message_chunk, ToolMessage):
                     tool_name = getattr(message_chunk, "name", "tool")
@@ -138,4 +161,8 @@ if user_input:
             status_holder["box"].update(
                 label="✅ Tool finished", state="complete", expanded=False
             )
-    st.session_state['message_history'].append({'role': 'assistant', 'content': ai_message})
+
+    # Save assistant message
+    st.session_state["message_history"].append(
+        {"role": "assistant", "content": ai_message}
+    )
