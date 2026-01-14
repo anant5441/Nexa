@@ -1,104 +1,77 @@
 # Nexa Chatbot (LangGraph + Streamlit)
 
-A simple, persistent chatbot built with LangGraph and Streamlit. It uses Google's Gemini models for responses and stores chat state in a local SQLite database so you can revisit previous conversations.
+A persistent, multi-modal chatbot built with LangGraph and Streamlit. It uses Google's Gemini models for responses, local MCP servers for tool extensions, and stores chat state in a local SQLite database.
 
 ## Features
-- Multi-threaded conversations (thread list in sidebar)
-- **ResumeChat Ready** - Switch between previous conversations seamlessly
-- **SQLite Database Storage** - Persistent chat history with automatic state management
-- Persistent state via SQLite (`chatbot.db`)
-- Automatic short titles for conversations
-- `.env`-based API key management (ignored by Git)
-
-## Built-in tools
-- DuckDuckGo Search: General web search via DuckDuckGo.
-- Calculator: Basic arithmetic on two numbers (add, sub, mul, div).
-- Stock Price: Fetches latest quote data for a ticker using Alpha Vantage.
-
-Tips:
-- Ask naturally; the assistant will call tools as needed.
-- Example prompts are below.
+- **Persistent Memory**: Chat history is saved in a local SQLite database (`chatbot.db`).
+- **Multi-Threaded**: Switch between different conversations easily using the sidebar.
+- **MCP Integration**: Uses the Model Context Protocol (MCP) to extend capabilities (e.g., local arithmetic server).
+- **RAG Capabilities**: Upload PDFs to chat with your documents using vector embeddings.
+- **Smart Titles**: Automatically generates short titles for your conversations.
+- **Tools**:
+  - **Web Search**: DuckDuckGo search integration.
+  - **Stock Price**: Alpha Vantage integration for financial data.
+  - **Arithmetic**: Local MCP server for safe mathematical operations.
+  - **RAG**: Document question-answering.
 
 ## Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Google Gemini API key
-- (Optional) Groq API key
+- (Optional) Alpha Vantage API key (for stock prices)
+- (Optional) GitHub Token (for PR listing)
 
 ## Setup
-1. Navigate to the project folder:
-   ```bash
+
+1. **Clone/Enter the project**:
+   ```powershell
    cd LangGraph/chatbot
    ```
 
-2. Create and activate a virtual environment:
-   - Windows (PowerShell):
-     ```powershell
-     python -m venv .venv
-     .venv\Scripts\activate
-     ```
-   - macOS/Linux (bash):
-     ```bash
-     python -m venv .venv
-     source .venv/bin/activate
-     ```
+2. **Set up Virtual Environment**:
+   ```powershell
+   python -m venv venv1
+   .\venv1\Scripts\activate
+   ```
 
-3. Install dependencies (recommended):
-   ```bash
+3. **Install Dependencies**:
+   ```powershell
    pip install -r requirements.txt
    ```
 
-   Or install the minimal core set manually:
-   ```bash
-   pip install -U streamlit langgraph langchain-google-genai google-generativeai langchain-groq python-dotenv
-   ```
-
-4. Create a `.env` file in `chatbot/` with your keys:
+4. **Environment Variables**:
+   Create a `.env` file in the `chatbot/` directory:
    ```env
-   GOOGLE_API_KEY=your_google_gemini_api_key
-   # Optional, only if you plan to use Groq models anywhere
-   GROQ_API_KEY=your_groq_api_key
-
-    # Optional: Alpha Vantage for stock quotes (used by Stock Price tool)
-    ALPHAVANTAGE_API_KEY=your_alpha_vantage_api_key
-
-    # Optional: LangSmith for tracing/observability
-    LANGSMITH_API_KEY=your_langsmith_api_key
-    # LANGSMITH_TRACING=1
-    # LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+   GOOGLE_API_KEY=your_google_gemini_key
+   ALPHAVANTAGE_API_KEY=your_alpha_vantage_key
+   GITHUB_TOKEN=your_github_token
    ```
 
-   Note: `.env`, `__pycache__/`, and `*.pyc` are ignored by Git via `chatbot/.gitignore`.
+## Running the App
 
-## Run
-From the `chatbot` directory, start the UI:
-```bash
-streamlit run frontend.py
+Start the Streamlit frontend:
+```powershell
+python -m streamlit run frontend.py
 ```
 
-- The app sidebar shows existing chats and lets you create a new one.
-- Conversations are saved in `chatbot.db`. To fully reset, stop the app and remove `chatbot.db`.
+The application will open in your browser at `http://localhost:8501`.
 
-### Usage examples
-- Web search (DuckDuckGo): "Search the web for the latest news about SpaceX and summarize."
-- Stocks (Alpha Vantage): "What's the latest price for AAPL?" or "Get TSLA quote."
-- Calculator: "Calculate 25.4 × 7.2" or "What is 144 ÷ 12?"
+## Project Structure
 
-## Files
-- `backend.py`: LangGraph pipeline and SQLite checkpointer. Uses `gemini-2.5-flash`.
-- `frontend.py`: Streamlit UI, chat threads, and title generation (uses `gemini-2.5-flash` for short titles).
-- `chatbot.db`: Local SQLite database (auto-created at runtime).
-- `.gitignore`: Ensures `.env` and Python cache files are not tracked.
-- `requirements.txt`: Pinned/compatible dependency set used by the app.
+- `frontend.py`: The Streamlit User Interface. Handles chat rendering and streaming.
+- `backend.py`: The LangGraph agent definition.
+  - Includes a compatibility patch for `aiosqlite`.
+  - Configures the MCP client.
+- `mcp_server.py`: A local MCP server providing arithmetic tools (Add/Sub/Mul/Div).
+- `chatbot.db`: Local SQLite database for chat history.
 
 ## Troubleshooting
-- If the app complains about missing keys, ensure `.env` exists and contains `GOOGLE_API_KEY` (and optionally `GROQ_API_KEY`), then restart the app.
-- If you change environment variables, restart the terminal or re-activate the virtual environment so they reload.
 
----
+### Startup Errors
+If you see an error about `is_alive` not being found on `aiosqlite.Connection`:
+- This is a known incompatibility between `langgraph-checkpoint-sqlite` and `aiosqlite` v0.22+.
+- **Fix**: The included `backend.py` contains a monkeypatch to resolve this automatically. Ensure you are running the latest version of the code.
 
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**Built with ❤️ using modern web technologies**
+### MCP Errors
+If you see connection errors related to MCP:
+- Ensure `mcp_server.py` exists in the same directory.
+- The backend is configured to run this server using the current Python environment.
